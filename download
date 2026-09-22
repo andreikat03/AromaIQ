@@ -1,9 +1,4 @@
-# OS / editors
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
-
-# Local environment / secrets
 .env
 .env.*

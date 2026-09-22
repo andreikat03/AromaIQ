@@ -3,14 +3,105 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="AromaIQ - retail perfume assistant for recommendations, inventory and sales.">
-<meta name="theme-color" content="#f4f2ef">
-<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <title>AromaIQ Retail</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="stylesheet" href="assets/css/styles.css">
+<style>
+:root{
+  --bg:#f4f2ef; --panel:#fff; --panel2:#faf9f7; --text:#20201e; --text2:#4f4d49;
+  --muted:#807c76; --line:#e4e0da; --line2:#d4cec6; --dark:#242321;
+  --soft:#ece8e3; --green:#2f7554; --greenbg:#edf6f0; --amber:#98681f; --amberbg:#fff6e4;
+  --red:#a13f48; --redbg:#fff1f2; --blue:#4d6682; --bluebg:#eef3f7; --radius:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit} button{cursor:pointer}
+.app{min-height:100vh;display:grid;grid-template-columns:220px 1fr}
+aside{position:sticky;top:0;height:100vh;background:#fbfaf8;border-right:1px solid var(--line);padding:24px 14px 18px;display:flex;flex-direction:column;gap:18px}
+.brand{padding:0 8px 20px;border-bottom:1px solid var(--line)}
+.brand-row{display:flex;align-items:center;gap:10px}
+.brand-mark{width:34px;height:34px;border-radius:9px;background:var(--dark);color:white;display:grid;place-items:center;font-size:11px;font-weight:800}
+.logo{font-size:15px;font-weight:800;letter-spacing:-.15px}.brand small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+nav{display:flex;flex-direction:column;gap:4px}
+.nav-btn{border:0;background:transparent;color:#605d58;text-align:left;padding:10px 11px;border-radius:9px;font-size:12px;font-weight:650}
+.nav-btn:hover{background:#f0ede9;color:var(--text)}
+.nav-btn.active{background:#eae6e1;color:var(--text);font-weight:760}
+.nav-sep{height:1px;background:var(--line);margin:5px 3px}
+.manager-only{display:none}
+body.role-manager .manager-only{display:block}
+.side-info{margin-top:auto;background:#f3f0ec;color:#77716b;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:10px;line-height:1.5}
+main{padding:28px 34px 44px;max-width:1500px;width:100%;margin:0 auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:18px;margin-bottom:20px;border-bottom:1px solid var(--line)}
+.topbar h1{font-size:27px;line-height:1.1;letter-spacing:-.55px;margin:0;font-weight:780}.topbar p{color:var(--muted);font-size:12px;margin:5px 0 0}
+.top-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.compact{border:1px solid var(--line2);background:#fff;border-radius:8px;padding:8px 9px;font-size:10px;color:#514c47}
+.status{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fbfaf8;border-radius:8px;padding:7px 9px;color:#6c6761;font-size:10px}.dot{width:6px;height:6px;border-radius:50%;background:#4b966c}
+.view{display:none}.view.active{display:block}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:0 1px 2px rgba(25,22,18,.025)}
+.card h2{font-size:17px;margin:0 0 5px;font-weight:780;letter-spacing:-.2px}.sub{color:var(--muted);font-size:11px;line-height:1.5;margin-bottom:15px}.kicker{color:var(--muted);font-size:9px;letter-spacing:.7px;text-transform:uppercase;margin-bottom:5px}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 10px;font-size:11px;color:#5f5a55;font-weight:650}
+.chip:hover{background:#f8f6f3;border-color:var(--line2)}.chip.active{background:var(--dark);border-color:var(--dark);color:#fff}
+.consult{margin-top:15px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px}
+.row{display:grid;grid-template-columns:145px 1fr;gap:10px;align-items:center}.label b{display:block;font-size:11px}.label span{font-size:9px;color:var(--muted)}
+.budget{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+input,select,textarea{border:1px solid var(--line2);background:#fff;color:var(--text);border-radius:8px;padding:9px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#968a80;box-shadow:0 0 0 2px rgba(117,103,93,.08)}
+.budget input{width:150px}.quick{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 9px;color:#68625c;font-size:10px}.quick.active,.quick:hover{background:#eeeae6}
+details{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}summary{cursor:pointer;color:#66615c;font-size:10px;font-weight:720;list-style:none}summary::-webkit-details-marker{display:none}
+.extra{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}.sort-row{display:grid;grid-template-columns:145px 1fr;gap:10px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.btn{border:1px solid transparent;border-radius:8px;padding:9px 12px;font-size:11px;font-weight:730}.btn.primary{background:var(--dark);color:#fff}.btn.soft{background:#fff;border-color:var(--line2);color:#4b4742}.btn.danger{background:var(--redbg);border-color:#efd4d7;color:var(--red)}.btn.green{background:var(--greenbg);border-color:#d5e9dc;color:var(--green)}.btn.blue{background:var(--bluebg);border-color:#d8e2eb;color:var(--blue)}
+.recommendations{display:grid;gap:8px;margin-top:15px}.perfume{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px}.perfume:first-child{border-color:#bdb3aa}
+.pimg{width:64px;height:76px;border-radius:8px;border:1px solid var(--line);background:#f5f3f0;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#aaa29a;font-size:9px;text-align:center}.pimg img{width:100%;height:100%;object-fit:cover}
+.rank{font-size:8px;color:#7a726c;margin-bottom:3px}.pname{font-size:15px;font-weight:780}.brand{font-size:9px;color:#918a83;margin-top:2px}.price{font-size:14px;font-weight:780;white-space:nowrap}
+.meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}.tag{background:#f5f3f0;border-radius:6px;padding:4px 6px;font-size:9px;color:#716a63}.why{color:#6d6862;font-size:10px;line-height:1.5;margin-top:7px}
+.pbottom{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:9px;flex-wrap:wrap}.small-actions{display:flex;gap:5px;flex-wrap:wrap}
+.stock-pill{font-size:9px;padding:5px 7px;border-radius:6px;background:var(--greenbg);color:var(--green);font-weight:760}.stock-pill.low{background:var(--amberbg);color:var(--amber)}.stock-pill.zero{background:var(--redbg);color:var(--red)}
+.mini{border:1px solid var(--line2);background:#fff;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:680;color:#57524d}.mini.dark{background:var(--dark);color:#fff;border-color:var(--dark)}.mini.test{background:var(--bluebg);color:var(--blue);border-color:#d8e2eb}.mini.delete{background:#fff7f8;color:var(--red);border-color:#efd7da}
+.chat{height:530px;display:flex;flex-direction:column}.messages{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}.msg{max-width:86%;padding:9px 11px;border-radius:10px;font-size:11px;line-height:1.4}.msg.bot{align-self:flex-start;background:#f5f3f0;color:#5e5954}.msg.user{align-self:flex-end;background:var(--dark);color:#fff}.chat-input{display:flex;gap:7px;padding-top:10px;border-top:1px solid var(--line)}.chat-input input{flex:1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}.stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}.stat .n{font-size:21px;font-weight:780}.stat .l{font-size:9px;color:var(--muted);margin-top:3px}
+.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:11px}.toolbar input{min-width:240px;flex:1}
+.table-wrap{border:1px solid var(--line);border-radius:10px;overflow:auto}table{border-collapse:collapse;width:100%;background:#fff}th,td{text-align:left;padding:10px 9px;border-bottom:1px solid #eeeae5;vertical-align:middle}th{background:#f8f6f3;color:#858079;font-size:8px;letter-spacing:.45px;text-transform:uppercase}td{font-size:11px}tbody tr:hover{background:#fbfaf8}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:11px}.field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}.field label{font-size:10px;font-weight:720;color:#5b5651}.help{font-size:9px;color:var(--muted)}
+.checks{display:flex;gap:6px;flex-wrap:wrap}.check{background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:10px;color:#66605a}
+.manage{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}.manage-item{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px;margin-top:7px}.thumb{width:44px;height:48px;background:#f5f3f0;border:1px solid var(--line);border-radius:7px;overflow:hidden;display:grid;place-items:center;font-size:8px;color:#aaa}.thumb img{width:100%;height:100%;object-fit:cover}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.compare-card{border:1px solid var(--line);border-radius:10px;padding:15px;background:#fff}.compare-hero{display:flex;gap:12px}.compare-hero .pimg{width:88px;height:105px}.compare-list{margin-top:12px;display:grid;gap:0}.compare-row{display:grid;grid-template-columns:130px 1fr;gap:10px;padding:8px 0;border-top:1px solid #eeeae5;font-size:10px}.compare-row b{color:#5b5651}
+.scan-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px}.scanner{background:#171715;border-radius:12px;min-height:300px;display:grid;place-items:center;overflow:hidden;position:relative}.scanner video{width:100%;height:100%;object-fit:cover}.scan-line{position:absolute;left:14%;right:14%;top:50%;height:1px;background:#fff;opacity:.6}.scan-result{margin-top:10px}
+.import-zone{border:1px dashed #bbb2aa;background:#faf9f7;border-radius:10px;padding:20px;text-align:center}.import-status{margin-top:12px;font-size:10px;color:#68625c}.code{background:#f3f1ee;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:ui-monospace,Consolas,monospace;font-size:9px;white-space:pre-wrap}
+.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.list{display:grid;gap:7px}.list-item{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid var(--line);border-radius:9px;padding:10px;background:#fff;font-size:10px}.bar{height:6px;background:#eeeae5;border-radius:99px;overflow:hidden;margin-top:5px}.bar span{height:100%;display:block;background:#77706a}
+.cloud-status{display:flex;align-items:center;gap:7px;font-size:10px;color:#6d6862}.cloud-dot{width:7px;height:7px;border-radius:50%;background:#b6afa8}.cloud-dot.on{background:#4a956b}
+.notice{background:#f8f6f3;border:1px solid var(--line);border-radius:9px;padding:10px;font-size:10px;color:#66605a;line-height:1.5}
+.mobile-menu{display:none}
+.toast{position:fixed;right:20px;bottom:20px;background:#242321;color:#fff;border-radius:9px;padding:10px 12px;font-size:10px;opacity:0;transform:translateY(8px);transition:.18s;z-index:100}.toast.show{opacity:1;transform:none}
+.modal{position:fixed;inset:0;background:rgba(30,28,25,.30);display:none;place-items:center;padding:18px;z-index:90;backdrop-filter:blur(3px)}.modal.open{display:grid}.modal-box{width:min(760px,100%);max-height:90vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;box-shadow:0 24px 70px rgba(25,20,15,.14)}
+@media(max-width:1050px){.grid,.scan-wrap,.dashboard-grid{grid-template-columns:1fr}.extra{grid-template-columns:1fr 1fr}.row,.sort-row{grid-template-columns:1fr}.chat{height:430px}}
+@media(max-width:900px){.app{display:block}aside{display:none}main{padding:16px}.mobile-menu{display:flex;gap:6px;overflow:auto;position:sticky;top:0;background:rgba(244,242,239,.96);padding:7px 0;z-index:30}.topbar{align-items:flex-start}.topbar h1{font-size:23px}.top-actions{justify-content:flex-start}.stats{grid-template-columns:1fr 1fr}.form,.compare-grid{grid-template-columns:1fr}.field.full{grid-column:auto}table{min-width:850px}}
 
+/* Statistics */
+.stats-shell{margin-bottom:14px}
+.stats-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.period-tabs{display:flex;gap:6px;flex-wrap:wrap}
+.period-btn{border:1px solid var(--line);background:#fff;color:#625d57;border-radius:8px;padding:7px 10px;font-size:10px;font-weight:700}
+.period-btn:hover{background:#f6f4f1}
+.period-btn.active{background:var(--dark);color:#fff;border-color:var(--dark)}
+.stats-grid{grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr)}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{border:1px solid var(--line);border-radius:9px;background:#fff;padding:11px}
+.metric .mv{font-size:17px;font-weight:780;letter-spacing:-.3px}
+.metric .ml{font-size:9px;color:var(--muted);margin-top:3px}
+.sales-chart{height:250px;border:1px solid var(--line);border-radius:10px;background:#faf9f7;padding:16px 12px 28px;display:flex;align-items:flex-end;gap:5px;overflow-x:auto;position:relative}
+.chart-col{min-width:18px;flex:1;max-width:48px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;position:relative}
+.chart-bar{width:70%;min-height:2px;background:#64605b;border-radius:4px 4px 1px 1px;transition:.15s}
+.chart-bar:hover{background:#242321}
+.chart-value{font-size:8px;color:#6f6963;white-space:nowrap}
+.chart-label{position:absolute;bottom:-20px;font-size:8px;color:#918a83;white-space:nowrap;transform:rotate(-35deg);transform-origin:center}
+.chart-empty{margin:auto;color:var(--muted);font-size:11px}
+@media(max-width:1050px){.stats-grid{grid-template-columns:1fr}.stats-head{display:block}.period-tabs{margin-top:12px}}
+@media(max-width:650px){.metric-grid{grid-template-columns:1fr}.sales-chart{height:220px}}
+
+</style>
 </head>
 <body class="role-seller">
 <div class="app">
@@ -27,6 +118,7 @@
     <button class="nav-btn manager-only" data-view="add">Produse</button>
     <button class="nav-btn manager-only" data-view="import">Import catalog</button>
     <button class="nav-btn manager-only" data-view="manager">Manager</button>
+    <button class="nav-btn manager-only" data-view="statistics">Statistici</button>
     <button class="nav-btn manager-only" data-view="cloud">Cloud & conturi</button>
     <button class="nav-btn manager-only" data-view="backup">Backup</button>
   </nav>
@@ -45,7 +137,7 @@
 
   <div class="mobile-menu" id="mobileNav">
     <button class="btn soft" data-view="recommend">Recomandă</button><button class="btn soft" data-view="stock">Stoc</button><button class="btn soft" data-view="compare">Compară</button><button class="btn soft" data-view="scan">Scanare</button>
-    <button class="btn soft manager-only" data-view="manager">Manager</button>
+    <button class="btn soft manager-only" data-view="manager">Manager</button><button class="btn soft manager-only" data-view="statistics">Statistici</button>
   </div>
 
   <section id="recommend" class="view active">
@@ -154,6 +246,56 @@
     </div>
   </section>
 
+
+  <section id="statistics" class="view">
+    <div class="card stats-shell">
+      <div class="stats-head">
+        <div>
+          <div class="kicker">Performanță</div>
+          <h2>Statistici</h2>
+          <div class="sub" style="margin-bottom:0">Vânzări, recomandări și semnale utile pentru manager.</div>
+        </div>
+        <div class="period-tabs" id="statsPeriodTabs">
+          <button class="period-btn" data-days="7">7 zile</button>
+          <button class="period-btn active" data-days="30">30 zile</button>
+          <button class="period-btn" data-days="180">6 luni</button>
+          <button class="period-btn" data-days="365">1 an</button>
+          <button class="period-btn" data-days="0">Tot</button>
+        </div>
+      </div>
+
+      <div class="stats" id="statsOverview"></div>
+    </div>
+
+    <div class="dashboard-grid stats-grid">
+      <div class="card">
+        <div class="kicker">Evoluție</div>
+        <h2>Vânzări în perioada selectată</h2>
+        <div class="sub">Valoarea vânzărilor înregistrate în aplicație.</div>
+        <div id="salesChart" class="sales-chart"></div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Operațional</div>
+        <h2>Indicatori</h2>
+        <div id="operationalStats" class="metric-grid"></div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Produse</div>
+        <h2>Top produse vândute</h2>
+        <div id="statsTopProducts" class="list"></div>
+      </div>
+
+      <div class="card">
+        <div class="kicker">Cerere</div>
+        <h2>Cereri pierdute</h2>
+        <div class="sub">Ce au cerut clienții când nu exista o potrivire disponibilă.</div>
+        <div id="statsLostDemand" class="list"></div>
+      </div>
+    </div>
+  </section>
+
   <section id="cloud" class="view">
     <div class="dashboard-grid">
       <div class="card">
@@ -191,7 +333,314 @@
 </div><div class="actions" style="justify-content:flex-end"><button class="btn soft" id="cancelEdit">Anulează</button><button class="btn primary" id="saveEdit">Salvează</button></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script src="assets/js/app.js"></script>
+<script>
+const TAGS=[["vară","Vară"],["iarnă","Iarnă"],["primăvară","Primăvară"],["toamnă","Toamnă"],["nuntă","Nuntă"],["eveniment","Eveniment"],["birou","Birou"],["seară","Seară"],["dulce","Dulce"],["fresh","Fresh"],["elegant","Elegant"],["intens","Intens"],["discret","Discret"],["cadou","Cadou"],["femei","Femei"],["bărbați","Bărbați"],["unisex","Unisex"]];
 
+const DEMO_PRODUCTS=[
+{id:1,name:"Velvet Vanilla",brand:"Maison Demo",sku:"VV-100",barcode:"594000000001",price:289,gender:"Femei",family:"Gurmand",notes:["Vanilie","Ambră","Tonka"],longevity:8,desc:"Vanilie, ambră și tonka. Cald și elegant.",image:"",tags:["iarnă","nuntă","eveniment","seară","dulce","elegant","intens","femei"],stocks:{"Insula principală":4,"Mall Nord":1}},
+{id:2,name:"Azure Citrus",brand:"Maison Demo",sku:"AC-200",barcode:"594000000002",price:249,gender:"Unisex",family:"Citric",notes:["Bergamotă","Neroli","Mosc"],longevity:6,desc:"Citrice, neroli și mosc curat.",image:"",tags:["vară","primăvară","birou","fresh","discret","unisex"],stocks:{"Insula principală":6,"Mall Nord":3}},
+{id:3,name:"Midnight Oud",brand:"Noir Atelier",sku:"MO-300",barcode:"594000000003",price:349,gender:"Bărbați",family:"Oriental",notes:["Oud","Ambră","Condimente"],longevity:9,desc:"Oud, lemn, condimente și ambră.",image:"",tags:["iarnă","eveniment","seară","elegant","intens","bărbați"],stocks:{"Insula principală":2,"Mall Nord":4}},
+{id:4,name:"Rose Ceremony",brand:"Lumière",sku:"RC-400",barcode:"594000000004",price:319,gender:"Femei",family:"Floral",notes:["Trandafir","Bujor","Mosc"],longevity:7,desc:"Trandafir, bujor și mosc fin.",image:"",tags:["primăvară","nuntă","eveniment","elegant","cadou","femei"],stocks:{"Insula principală":3,"Mall Nord":0}},
+{id:5,name:"Ocean Linen",brand:"Lumière",sku:"OL-500",barcode:"594000000005",price:229,gender:"Bărbați",family:"Acvatic",notes:["Citrice","Note marine","Mosc"],longevity:6,desc:"Acvatic, citric și curat.",image:"",tags:["vară","birou","fresh","discret","bărbați"],stocks:{"Insula principală":5,"Mall Nord":2}},
+{id:6,name:"Amber Signature",brand:"Noir Atelier",sku:"AS-600",barcode:"594000000006",price:379,gender:"Unisex",family:"Oriental",notes:["Ambră","Tonka","Șofran"],longevity:9,desc:"Ambră, tonka, șofran și lemn.",image:"",tags:["toamnă","iarnă","nuntă","eveniment","seară","dulce","elegant","intens","cadou","unisex"],stocks:{"Insula principală":1,"Mall Nord":2}}
+];
+
+const STORE_KEY="aromaiqRetailV8";
+const DEFAULT_STATE={
+  version:8,
+  products:DEMO_PRODUCTS,
+  locations:["Insula principală","Mall Nord"],
+  currentLocation:"Insula principală",
+  users:[{id:1,name:"Vânzător demo",role:"seller"},{id:2,name:"Manager demo",role:"manager"}],
+  currentUserId:1,
+  sales:[],
+  interactions:[],
+  lostDemand:[],
+  cloud:{url:"",key:""},
+};
+const deepClone=x=>JSON.parse(JSON.stringify(x));
+let state=loadState();
+let selected=new Set();
+let compareSelection=[];
+let editingId=null;
+let imageDataPending="";
+let scanStream=null,scanTimer=null,cloudClient=null;
+let statsDays=30;
+
+function loadState(){try{const x=JSON.parse(localStorage.getItem(STORE_KEY));return x?migrateState(x):deepClone(DEFAULT_STATE);}catch{return deepClone(DEFAULT_STATE)}}
+function migrateState(s){
+  const x={...deepClone(DEFAULT_STATE),...s};
+  x.locations=Array.isArray(x.locations)&&x.locations.length?x.locations:["Insula principală"];
+  x.products=(x.products||[]).map(p=>{
+    const stocks=p.stocks&&typeof p.stocks==="object"?p.stocks:{[x.locations[0]]:Number(p.stock||0)};
+    x.locations.forEach(l=>{if(stocks[l]==null)stocks[l]=0});
+    return {id:Number(p.id)||Date.now()+Math.random(),name:String(p.name||""),brand:String(p.brand||""),sku:String(p.sku||""),barcode:String(p.barcode||""),price:Number(p.price||0),gender:String(p.gender||"Unisex"),family:String(p.family||""),notes:Array.isArray(p.notes)?p.notes:String(p.notes||"").split(",").map(z=>z.trim()).filter(Boolean),longevity:Number(p.longevity||0),desc:String(p.desc||p.description||""),image:String(p.image||""),tags:Array.isArray(p.tags)?p.tags:[],stocks};
+  });
+  x.users=Array.isArray(x.users)&&x.users.length?x.users:deepClone(DEFAULT_STATE.users);
+  if(!x.currentUserId||!x.users.some(u=>u.id===x.currentUserId))x.currentUserId=x.users[0].id;
+  if(!x.locations.includes(x.currentLocation))x.currentLocation=x.locations[0];
+  x.sales=Array.isArray(x.sales)?x.sales:[];x.interactions=Array.isArray(x.interactions)?x.interactions:[];x.lostDemand=Array.isArray(x.lostDemand)?x.lostDemand:[];
+  x.cloud=x.cloud||{url:"",key:""};
+  return x;
+}
+function saveState(){localStorage.setItem(STORE_KEY,JSON.stringify(state))}
+function norm(s){return String(s??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[șş]/g,"s").replace(/[țţ]/g,"t")}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+function money(v){return new Intl.NumberFormat("ro-RO",{style:"currency",currency:"RON",maximumFractionDigits:2}).format(Number(v||0))}
+function toast(t){const x=document.getElementById("toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),1800)}
+function currentUser(){return state.users.find(u=>u.id===state.currentUserId)||state.users[0]}
+function isManager(){return currentUser()?.role==="manager"}
+function getStock(p,loc=state.currentLocation){return Number(p.stocks?.[loc]||0)}
+function setStock(p,val,loc=state.currentLocation){p.stocks=p.stocks||{};p.stocks[loc]=Math.max(0,Number(val||0))}
+function stockClass(n){return n===0?"zero":n<=2?"low":""}
+function productImg(p,cls="pimg"){return `<div class="${cls}">${p.image?`<img src="${esc(p.image)}" alt="">`:`<span>${esc(p.brand||"Parfum")}</span>`}</div>`}
+function criteriaText(c){const a=[...c.tags];if(c.family)a.push(c.family);if(c.note)a.push(c.note);if(c.longevity)a.push("persistent");if(c.budgetMax)a.push("≤ "+c.budgetMax+" lei");return a.join(", ")||"cerere generală"}
+
+function renderTop(){
+  const ls=document.getElementById("locationSelect");ls.innerHTML=state.locations.map(l=>`<option ${l===state.currentLocation?"selected":""}>${esc(l)}</option>`).join("");
+  const us=document.getElementById("userSelect");us.innerHTML=state.users.map(u=>`<option value="${u.id}" ${u.id===state.currentUserId?"selected":""}>${esc(u.name)} · ${u.role==="manager"?"Manager":"Vânzător"}</option>`).join("");
+  document.body.classList.toggle("role-manager",isManager());document.body.classList.toggle("role-seller",!isManager());
+  document.getElementById("roleLabel").textContent=isManager()?"Manager":"Vânzător";
+}
+function renderChips(){document.getElementById("chips").innerHTML=TAGS.map(([k,l])=>`<button class="chip ${selected.has(k)?"active":""}" data-tag="${k}">${l}</button>`).join("");document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{selected.has(b.dataset.tag)?selected.delete(b.dataset.tag):selected.add(b.dataset.tag);renderChips()})}
+function currentCriteria(){return{tags:new Set(selected),budgetMax:Number(document.getElementById("budgetMax").value||0),family:document.getElementById("familyFilter").value,note:document.getElementById("noteFilter").value.trim(),longevity:Number(document.getElementById("longevityFilter").value||0)}}
+function hasCriteria(c){return c.tags.size||c.budgetMax||c.family||c.note||c.longevity}
+function scoreProduct(p,c){let score=0,reasons=[];c.tags.forEach(t=>{if(p.tags.includes(t)){score+=3;reasons.push(t)}});if(c.family&&norm(p.family)===norm(c.family)){score+=2;reasons.push(p.family)};if(c.note&&norm([...(p.notes||[]),p.desc].join(" ")).includes(norm(c.note))){score+=2;reasons.push(c.note)};if(c.longevity&&p.longevity>=c.longevity){score+=1;reasons.push("persistență")};return{score,reasons:[...new Set(reasons)]}}
+function recommend(c,limit=6){
+  let list=state.products.filter(p=>getStock(p)>0).filter(p=>!c.budgetMax||p.price<=c.budgetMax).filter(p=>!c.family||norm(p.family)===norm(c.family)).filter(p=>!c.longevity||p.longevity>=c.longevity).filter(p=>!c.note||norm([...(p.notes||[]),p.desc].join(" ")).includes(norm(c.note))).map(p=>({p,...scoreProduct(p,c)})).filter(x=>c.tags.size?x.score>0:!!(c.budgetMax||c.family||c.note||c.longevity));
+  const s=document.getElementById("recommendSort").value,co=new Intl.Collator("ro",{sensitivity:"base"});
+  if(s==="name-asc")list.sort((a,b)=>co.compare(a.p.name,b.p.name));else if(s==="price-asc")list.sort((a,b)=>a.p.price-b.p.price);else if(s==="price-desc")list.sort((a,b)=>b.p.price-a.p.price);else if(s==="stock-desc")list.sort((a,b)=>getStock(b.p)-getStock(a.p));else if(s==="longevity-desc")list.sort((a,b)=>b.p.longevity-a.p.longevity);else list.sort((a,b)=>b.score-a.score||b.p.longevity-a.p.longevity||getStock(b.p)-getStock(a.p));
+  return list.slice(0,limit);
+}
+function track(type,p,extra={}){state.interactions.push({id:Date.now()+Math.random(),type,productId:p.id,location:state.currentLocation,userId:state.currentUserId,date:new Date().toISOString(),...extra});saveState()}
+function recordLost(c,source="buttons",query=""){state.lostDemand.push({id:Date.now()+Math.random(),location:state.currentLocation,userId:state.currentUserId,date:new Date().toISOString(),criteria:criteriaText(c),source,query});saveState()}
+function renderRecommendations(trackNow=false,c=currentCriteria()){
+  const box=document.getElementById("recommendations");if(!hasCriteria(c)){box.innerHTML='<div class="notice">Alege cel puțin un criteriu.</div>';return}
+  const res=recommend(c);if(!res.length){box.innerHTML='<div class="notice">Nu avem o potrivire disponibilă în această locație. Cererea a fost înregistrată pentru manager.</div>';if(trackNow)recordLost(c);return}
+  if(trackNow)res.forEach(x=>track("recommended",x.p,{criteria:criteriaText(c)}));
+  box.innerHTML=res.map(({p,reasons},i)=>{const st=getStock(p);return `<div class="perfume">${productImg(p)}<div><div class="rank">${i===0?"Recomandarea principală":"Alternativa "+(i+1)}</div><div class="pname">${esc(p.name)}</div><div class="brand">${esc(p.brand)}</div><div class="meta">${[p.family,...p.tags.slice(0,4)].filter(Boolean).map(t=>`<span class="tag">${esc(t)}</span>`).join("")}</div><div class="why"><b>De ce:</b> ${esc(reasons.length?reasons.join(", "):p.desc||"se încadrează în criteriile selectate")}${p.notes?.length?` · Note: ${esc(p.notes.slice(0,3).join(", "))}`:""}${p.longevity?` · Persistență ${p.longevity}/10`:""}</div><div class="pbottom"><span class="stock-pill ${stockClass(st)}">Stoc ${st}</span><div class="small-actions"><button class="mini test" onclick="tested(${p.id})">Testat</button><button class="mini" onclick="addCompare(${p.id})">Compară</button><button class="mini dark" onclick="sold(${p.id},'recommend')">Vândut</button></div></div></div><div class="price">${money(p.price)}</div></div>`}).join("");
+}
+function parseChat(text){
+  const s=norm(text),tags=new Set(),dict={"vara":"vară","iarna":"iarnă","primavara":"primăvară","toamna":"toamnă","nunta":"nuntă","mireasa":"nuntă","eveniment":"eveniment","petrecere":"eveniment","birou":"birou","seara":"seară","dulce":"dulce","fresh":"fresh","proaspat":"fresh","elegant":"elegant","intens":"intens","puternic":"intens","discret":"discret","cadou":"cadou","femei":"femei","femeie":"femei","barbati":"bărbați","barbat":"bărbați","unisex":"unisex"};
+  Object.entries(dict).forEach(([k,v])=>{if(s.includes(k))tags.add(v)});
+  let budgetMax=0;const m=s.match(/(?:sub|pana(?:\s+la)?|max(?:im)?|buget)[^\d]{0,10}(\d{2,5})/)||s.match(/(\d{2,5})\s*(?:lei|ron)/);if(m)budgetMax=Number(m[1]);
+  let family="";["Citric","Floral","Gurmand","Lemnos","Oriental","Acvatic","Aromatic","Mosc"].some(f=>s.includes(norm(f))?(family=f,true):false);
+  let note="";[...new Set(state.products.flatMap(p=>p.notes||[]))].sort((a,b)=>b.length-a.length).some(n=>s.includes(norm(n))?(note=n,true):false);
+  let longevity=s.includes("foarte persistent")?9:s.includes("persistent")?8:0;return{tags,budgetMax,family,note,longevity}
+}
+function sendChat(){
+  const input=document.getElementById("chatText"),text=input.value.trim();if(!text)return;const msgs=document.getElementById("messages");msgs.insertAdjacentHTML("beforeend",`<div class="msg user">${esc(text)}</div>`);
+  const c=parseChat(text),res=recommend(c,3);let ans;if(!hasCriteria(c))ans="Spune-mi un stil, o ocazie, un buget sau o notă olfactivă.";else if(!res.length){ans="Nu avem acum o potrivire în această locație. Am înregistrat cererea pentru manager.";recordLost(c,"chat",text)}else{res.forEach(x=>track("recommended",x.p,{criteria:criteriaText(c),source:"chat"}));ans=`Aș începe cu <b>${esc(res[0].p.name)}</b>${res[1]?`, apoi ${esc(res[1].p.name)}`:""}${res[2]?` și ${esc(res[2].p.name)}`:""}.`};msgs.insertAdjacentHTML("beforeend",`<div class="msg bot">${ans}</div>`);input.value="";msgs.scrollTop=msgs.scrollHeight
+}
+window.tested=id=>{const p=state.products.find(x=>x.id===id);if(!p)return;track("tested",p);toast("Marcat ca testat: "+p.name)}
+window.sold=(id,source="manual")=>{const p=state.products.find(x=>x.id===id);if(!p||getStock(p)<1)return;setStock(p,getStock(p)-1);state.sales.push({id:Date.now()+Math.random(),productId:p.id,name:p.name,brand:p.brand,price:p.price,location:state.currentLocation,userId:state.currentUserId,source,date:new Date().toISOString()});track("sold",p,{source});saveState();renderStock();renderRecommendations(false);toast("Vândut: "+p.name)}
+window.addCompare=id=>{if(!compareSelection.includes(id)){if(compareSelection.length>=2)compareSelection.shift();compareSelection.push(id)}renderCompareSelectors();nav("compare");renderCompare()}
+function renderStock(){
+  const q=norm(document.getElementById("stockSearch").value),f=document.getElementById("stockFilter").value,s=document.getElementById("stockSort").value,co=new Intl.Collator("ro",{sensitivity:"base"});let list=state.products.filter(p=>norm([p.name,p.brand,p.sku,p.barcode,p.family,...p.notes].join(" ")).includes(q));
+  if(f==="in")list=list.filter(p=>getStock(p)>0);if(f==="low")list=list.filter(p=>getStock(p)>0&&getStock(p)<=2);if(f==="out")list=list.filter(p=>getStock(p)===0);
+  if(s==="name-asc")list.sort((a,b)=>co.compare(a.name,b.name));else if(s==="name-desc")list.sort((a,b)=>co.compare(b.name,a.name));else if(s==="stock-desc")list.sort((a,b)=>getStock(b)-getStock(a));else if(s==="stock-asc")list.sort((a,b)=>getStock(a)-getStock(b));else if(s==="price-asc")list.sort((a,b)=>a.price-b.price);else if(s==="price-desc")list.sort((a,b)=>b.price-a.price);else if(s==="brand-asc")list.sort((a,b)=>co.compare(a.brand,b.brand));
+  document.getElementById("stockBody").innerHTML=list.map(p=>{const st=getStock(p),mgr=isManager();return `<tr><td><b>${esc(p.name)}</b><br><span style="color:#888">${esc(p.brand)}</span></td><td>${esc(p.sku||p.barcode||"—")}</td><td>${esc(p.family||"—")}</td><td>${money(p.price)}</td><td><span class="stock-pill ${stockClass(st)}">${st}</span></td><td><div class="small-actions"><button class="mini test" onclick="tested(${p.id})">Testat</button><button class="mini" onclick="addCompare(${p.id})">Compară</button><button class="mini dark" onclick="sold(${p.id},'stock')" ${st<1?"disabled":""}>Vândut</button>${mgr?`<button class="mini" onclick="changeStock(${p.id},1)">+1</button><button class="mini" onclick="openEdit(${p.id})">Editează</button>`:""}</div></td></tr>`}).join("");
+  const total=state.products.reduce((a,p)=>a+getStock(p),0),value=state.products.reduce((a,p)=>a+getStock(p)*p.price,0),low=state.products.filter(p=>getStock(p)>0&&getStock(p)<=2).length;
+  document.getElementById("stats").innerHTML=`<div class="stat"><div class="n">${state.products.length}</div><div class="l">Produse</div></div><div class="stat"><div class="n">${total}</div><div class="l">Bucăți în locație</div></div><div class="stat"><div class="n">${low}</div><div class="l">Stoc mic</div></div><div class="stat"><div class="n">${money(value)}</div><div class="l">Valoare stoc</div></div>`
+}
+window.changeStock=(id,d)=>{if(!isManager())return;const p=state.products.find(x=>x.id===id);if(!p)return;setStock(p,getStock(p)+d);saveState();renderStock();renderManage();toast("Stoc actualizat")}
+function renderCompareSelectors(){const opts=`<option value="">Alege parfum</option>`+state.products.map(p=>`<option value="${p.id}">${esc(p.brand)} — ${esc(p.name)}</option>`).join("");document.getElementById("compareA").innerHTML=opts;document.getElementById("compareB").innerHTML=opts;if(compareSelection[0])document.getElementById("compareA").value=compareSelection[0];if(compareSelection[1])document.getElementById("compareB").value=compareSelection[1]}
+function compareCard(p){if(!p)return`<div class="notice">Alege un parfum.</div>`;return `<div class="compare-card"><div class="compare-hero">${productImg(p)}<div><div class="pname">${esc(p.name)}</div><div class="brand">${esc(p.brand)}</div><div class="price" style="margin-top:6px">${money(p.price)}</div><div style="margin-top:8px"><span class="stock-pill ${stockClass(getStock(p))}">Stoc ${getStock(p)}</span></div></div></div><div class="compare-list"><div class="compare-row"><b>Familie</b><span>${esc(p.family||"—")}</span></div><div class="compare-row"><b>Note</b><span>${esc(p.notes.join(", ")||"—")}</span></div><div class="compare-row"><b>Persistență</b><span>${p.longevity?`${p.longevity}/10`:"—"}</span></div><div class="compare-row"><b>Gen</b><span>${esc(p.gender)}</span></div><div class="compare-row"><b>Ocazii / stil</b><span>${esc(p.tags.join(", "))}</span></div><div class="compare-row"><b>Descriere</b><span>${esc(p.desc||"—")}</span></div></div></div>`}
+function renderCompare(){const a=state.products.find(p=>String(p.id)===document.getElementById("compareA").value),b=state.products.find(p=>String(p.id)===document.getElementById("compareB").value);compareSelection=[a?.id,b?.id].filter(Boolean);document.getElementById("compareResult").innerHTML=compareCard(a)+compareCard(b)}
+function findByCode(code){const c=norm(code.trim());return state.products.find(p=>norm(p.barcode)===c||norm(p.sku)===c)}
+function renderScanProduct(p){document.getElementById("scanResult").innerHTML=p?`<div class="perfume">${productImg(p)}<div><div class="pname">${esc(p.name)}</div><div class="brand">${esc(p.brand)}</div><div class="why">${esc(p.family)} · ${money(p.price)}</div><div class="pbottom"><span class="stock-pill ${stockClass(getStock(p))}">Stoc ${getStock(p)}</span><div class="small-actions"><button class="mini test" onclick="tested(${p.id})">Testat</button><button class="mini dark" onclick="sold(${p.id},'scan')">Vândut</button></div></div></div><div></div></div>`:`<div class="notice">Codul nu a fost găsit.</div>`}
+async function startScanner(){
+  if(!("mediaDevices" in navigator)||!navigator.mediaDevices.getUserMedia){toast("Camera nu este disponibilă");return}
+  try{scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});const v=document.getElementById("scanVideo");v.srcObject=scanStream;await v.play();document.getElementById("scanPlaceholder").style.display="none";
+    if("BarcodeDetector" in window){const detector=new BarcodeDetector({formats:["ean_13","ean_8","code_128","upc_a","upc_e"]});const loop=async()=>{if(!scanStream)return;try{const codes=await detector.detect(v);if(codes[0]){document.getElementById("barcodeInput").value=codes[0].rawValue;renderScanProduct(findByCode(codes[0].rawValue));stopScanner();return}}catch{}scanTimer=setTimeout(loop,350)};loop()}else toast("Browserul nu suportă scanarea automată. Folosește câmpul manual.");
+  }catch{toast("Nu am putut porni camera")}
+}
+function stopScanner(){if(scanTimer)clearTimeout(scanTimer);scanTimer=null;if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null}document.getElementById("scanPlaceholder").style.display="block"}
+
+function renderChecks(){document.getElementById("tagChecks").innerHTML=TAGS.map(([k,l])=>`<label class="check"><input type="checkbox" value="${k}"> ${l}</label>`).join("")}
+async function readImageFile(file){if(!file)return"";return new Promise(resolve=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.readAsDataURL(file)})}
+function notes(v){return String(v||"").split(",").map(x=>x.trim()).filter(Boolean)}
+async function addProduct(){
+  if(!isManager())return;const name=pName.value.trim(),brand=pBrand.value.trim();if(!name||!brand){toast("Completează numele și brandul");return}
+  const file=pImageFile.files[0];if(file)imageDataPending=await readImageFile(file);const tags=[...document.querySelectorAll("#tagChecks input:checked")].map(x=>x.value),gender=pGender.value,gTag=gender==="Femei"?"femei":gender==="Bărbați"?"bărbați":"unisex";if(!tags.includes(gTag))tags.push(gTag);
+  const p={id:Date.now(),name,brand,sku:pSku.value.trim(),barcode:pBarcode.value.trim(),price:Number(pPrice.value||0),gender,family:pFamily.value,notes:notes(pNotes.value),longevity:Number(pLongevity.value||0),desc:pDesc.value.trim(),image:imageDataPending||pImage.value.trim(),tags,stocks:Object.fromEntries(state.locations.map(l=>[l,l===state.currentLocation?Number(pStock.value||0):0]))};
+  state.products.push(p);saveState();renderManage();renderCompareSelectors();["pName","pBrand","pSku","pBarcode","pPrice","pNotes","pDesc","pImage"].forEach(id=>document.getElementById(id).value="");pStock.value=1;pImageFile.value="";imageDataPending="";document.querySelectorAll("#tagChecks input").forEach(x=>x.checked=false);toast("Produs adăugat")
+}
+function renderManage(){const box=document.getElementById("manageList");if(!box)return;box.innerHTML=state.products.map(p=>`<div class="manage-item">${productImg(p,"thumb")}<div><b>${esc(p.name)}</b><div style="font-size:9px;color:#888;margin-top:2px">${esc(p.brand)} · ${esc(p.sku||p.barcode||"fără cod")} · stoc ${getStock(p)}</div></div><div class="small-actions"><button class="mini" onclick="openEdit(${p.id})">Editează</button><button class="mini delete" onclick="deleteProduct(${p.id})">Șterge</button></div></div>`).join("")}
+window.deleteProduct=id=>{if(!isManager())return;const p=state.products.find(x=>x.id===id);if(p&&confirm(`Ștergi ${p.name}?`)){state.products=state.products.filter(x=>x.id!==id);saveState();renderManage();renderStock();toast("Produs șters")}}
+window.openEdit=id=>{const p=state.products.find(x=>x.id===id);if(!p)return;editingId=id;eName.value=p.name;eBrand.value=p.brand;eSku.value=p.sku;eBarcode.value=p.barcode;ePrice.value=p.price;eStock.value=getStock(p);eGender.value=p.gender;eFamily.value=p.family;eNotes.value=p.notes.join(", ");eLongevity.value=p.longevity;eDesc.value=p.desc;eImage.value=p.image;editTagChecks.innerHTML=TAGS.map(([k,l])=>`<label class="check"><input type="checkbox" value="${k}" ${p.tags.includes(k)?"checked":""}> ${l}</label>`).join("");editModal.classList.add("open")}
+function saveEdit(){const p=state.products.find(x=>x.id===editingId);if(!p)return;p.name=eName.value.trim();p.brand=eBrand.value.trim();p.sku=eSku.value.trim();p.barcode=eBarcode.value.trim();p.price=Number(ePrice.value||0);setStock(p,Number(eStock.value||0));p.gender=eGender.value;p.family=eFamily.value;p.notes=notes(eNotes.value);p.longevity=Number(eLongevity.value||0);p.desc=eDesc.value.trim();p.image=eImage.value.trim();p.tags=[...document.querySelectorAll("#editTagChecks input:checked")].map(x=>x.value);saveState();editModal.classList.remove("open");renderManage();renderStock();renderCompareSelectors();toast("Produs actualizat")}
+
+function normalizeHeader(s){return norm(s).replace(/[^a-z0-9]+/g,"")}
+function valBy(row,aliases){const keys=Object.keys(row);for(const a of aliases){const k=keys.find(k=>normalizeHeader(k)===normalizeHeader(a));if(k!=null&&row[k]!=null&&row[k]!=="")return row[k]}return""}
+function parseTags(v){if(Array.isArray(v))return v;return String(v||"").split(/[,;|]/).map(x=>x.trim().toLowerCase()).filter(Boolean)}
+function upsertRows(rows){
+  let added=0,updated=0,skipped=0;
+  for(const r of rows){
+    const name=String(valBy(r,["nume","name","parfum","produs"])).trim(),brand=String(valBy(r,["brand","marca"])).trim();if(!name){skipped++;continue}
+    const sku=String(valBy(r,["sku","cod","codprodus"])).trim(),barcode=String(valBy(r,["barcode","codbare","ean","ean13"])).trim(),loc=String(valBy(r,["locatie","location","magazin"])).trim()||state.currentLocation;
+    if(!state.locations.includes(loc))state.locations.push(loc);
+    let p=state.products.find(x=>(sku&&x.sku===sku)||(barcode&&x.barcode===barcode)||(norm(x.name)===norm(name)&&norm(x.brand)===norm(brand)));
+    const price=Number(String(valBy(r,["pret","price","pretvanzare"])).replace(",",".")||0),stock=Number(String(valBy(r,["stoc","stock","cantitate","qty"])).replace(",",".")||0);
+    const data={name,brand,sku,barcode,price,gender:String(valBy(r,["gen","gender"])||"Unisex"),family:String(valBy(r,["familie","family","familieolfactiva"])),notes:notes(valBy(r,["note","notes","noteprincipale"])),longevity:Number(valBy(r,["persistenta","longevity"])||0),desc:String(valBy(r,["descriere","description"])),image:String(valBy(r,["imagine","image","imageurl","poza"])),tags:parseTags(valBy(r,["categorii","tags","ocazii"]))};
+    if(p){Object.assign(p,{...data,id:p.id,stocks:p.stocks});setStock(p,stock,loc);updated++}else{p={id:Date.now()+Math.random(),...data,stocks:Object.fromEntries(state.locations.map(l=>[l,0]))};setStock(p,stock,loc);state.products.push(p);added++}
+  }
+  state.products.forEach(p=>state.locations.forEach(l=>{if(p.stocks[l]==null)p.stocks[l]=0}));saveState();renderAll();return{added,updated,skipped}
+}
+async function importCatalog(){
+  const f=catalogFile.files[0];if(!f){toast("Alege un fișier");return}
+  try{let rows=[];const ext=f.name.split(".").pop().toLowerCase();
+    if(ext==="json"){const d=JSON.parse(await f.text());rows=Array.isArray(d)?d:(d.products||[])}
+    else if(ext==="csv"){const text=await f.text(),lines=text.split(/\r?\n/).filter(Boolean),sep=(lines[0].match(/;/g)||[]).length>(lines[0].match(/,/g)||[]).length?";":",";const headers=lines[0].split(sep).map(x=>x.replace(/^"|"$/g,"").trim());rows=lines.slice(1).map(line=>{const vals=line.match(/(".*?"|[^",;]+)(?=\s*[,;]|\s*$)/g)||line.split(sep);return Object.fromEntries(headers.map((h,i)=>[h,String(vals[i]||"").replace(/^"|"$/g,"").trim()]))})}
+    else{if(typeof XLSX==="undefined")throw new Error("Biblioteca Excel nu s-a încărcat");const buf=await f.arrayBuffer(),wb=XLSX.read(buf,{type:"array"}),ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{defval:""})}
+    const r=upsertRows(rows);importStatus.innerHTML=`Import finalizat: <b>${r.added}</b> produse noi, <b>${r.updated}</b> actualizate, <b>${r.skipped}</b> ignorate.`;
+  }catch(e){importStatus.textContent="Eroare la import: "+e.message}
+}
+
+
+function withinPeriod(iso,days){
+  if(!days)return true;
+  const d=new Date(iso).getTime();
+  return d>=Date.now()-days*86400000;
+}
+function periodSales(days=statsDays){return state.sales.filter(x=>withinPeriod(x.date,days))}
+function periodInteractions(days=statsDays){return state.interactions.filter(x=>withinPeriod(x.date,days))}
+function periodLost(days=statsDays){return state.lostDemand.filter(x=>withinPeriod(x.date,days))}
+function fmtPercent(v){return `${Math.round((Number(v)||0)*100)}%`}
+
+function aggregateSalesByBucket(sales,days){
+  const now=new Date(), map=new Map(), buckets=[];
+  let count = days===7?7 : days===30?15 : days===180?12 : days===365?12 : 12;
+  let stepDays = days===7?1 : days===30?2 : days===180?15 : days===365?30 : 30;
+
+  if(days===0 && sales.length){
+    const first=Math.min(...sales.map(s=>new Date(s.date).getTime()));
+    const span=Math.max(1,Math.ceil((Date.now()-first)/86400000));
+    stepDays=Math.max(1,Math.ceil(span/12));
+    count=Math.min(12,Math.ceil(span/stepDays));
+  }
+  if(days===0 && !sales.length){stepDays=30;count=12;}
+
+  for(let i=count-1;i>=0;i--){
+    const end=new Date(now.getTime()-i*stepDays*86400000);
+    const start=new Date(end.getTime()-stepDays*86400000);
+    const key=i;
+    const value=sales.filter(s=>{
+      const t=new Date(s.date).getTime();
+      return t>start.getTime() && t<=end.getTime();
+    }).reduce((a,s)=>a+Number(s.price||0),0);
+    const label=stepDays===1
+      ? end.toLocaleDateString("ro-RO",{day:"2-digit",month:"2-digit"})
+      : end.toLocaleDateString("ro-RO",{day:"2-digit",month:"2-digit"});
+    buckets.push({key,value,label});
+  }
+  return buckets;
+}
+
+function renderStatistics(){
+  const sales=periodSales(), interactions=periodInteractions(), lost=periodLost();
+  const revenue=sales.reduce((a,s)=>a+Number(s.price||0),0);
+  const avg=sales.length?revenue/sales.length:0;
+  const rec=interactions.filter(x=>x.type==="recommended").length;
+  const tested=interactions.filter(x=>x.type==="tested").length;
+  const soldInteractions=interactions.filter(x=>x.type==="sold").length;
+  const conversion=rec?Math.min(1,soldInteractions/rec):0;
+  const testToSale=tested?Math.min(1,soldInteractions/tested):0;
+  const low=state.products.filter(p=>getStock(p)>0&&getStock(p)<=2).length;
+  const out=state.products.filter(p=>getStock(p)===0).length;
+
+  document.querySelectorAll("#statsPeriodTabs .period-btn").forEach(b=>{
+    b.classList.toggle("active",Number(b.dataset.days)===statsDays);
+  });
+
+  statsOverview.innerHTML=`
+    <div class="stat"><div class="n">${money(revenue)}</div><div class="l">Încasări înregistrate</div></div>
+    <div class="stat"><div class="n">${sales.length}</div><div class="l">Vânzări</div></div>
+    <div class="stat"><div class="n">${money(avg)}</div><div class="l">Bon mediu</div></div>
+    <div class="stat"><div class="n">${fmtPercent(conversion)}</div><div class="l">Recomandare → vânzare</div></div>`;
+
+  operationalStats.innerHTML=`
+    <div class="metric"><div class="mv">${rec}</div><div class="ml">Recomandări generate</div></div>
+    <div class="metric"><div class="mv">${tested}</div><div class="ml">Produse testate</div></div>
+    <div class="metric"><div class="mv">${fmtPercent(testToSale)}</div><div class="ml">Testat → vândut</div></div>
+    <div class="metric"><div class="mv">${lost.length}</div><div class="ml">Cereri pierdute</div></div>
+    <div class="metric"><div class="mv">${low}</div><div class="ml">Produse cu stoc mic</div></div>
+    <div class="metric"><div class="mv">${out}</div><div class="ml">Produse epuizate</div></div>
+    <div class="metric"><div class="mv">${state.locations.length}</div><div class="ml">Locații</div></div>
+    <div class="metric"><div class="mv">${state.users.length}</div><div class="ml">Utilizatori</div></div>`;
+
+  const buckets=aggregateSalesByBucket(sales,statsDays);
+  const max=Math.max(...buckets.map(b=>b.value),0);
+  salesChart.innerHTML=max===0
+    ? '<div class="chart-empty">Nu există vânzări în perioada selectată.</div>'
+    : buckets.map(b=>`<div class="chart-col">
+        <div class="chart-value">${b.value?Math.round(b.value):""}</div>
+        <div class="chart-bar" title="${money(b.value)}" style="height:${Math.max(2,(b.value/max)*88)}%"></div>
+        <div class="chart-label">${b.label}</div>
+      </div>`).join("");
+
+  const counts={};
+  sales.forEach(s=>counts[s.productId]=(counts[s.productId]||0)+1);
+  statsTopProducts.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([id,c])=>{
+    const p=state.products.find(x=>x.id==id);
+    const sum=sales.filter(s=>String(s.productId)===String(id)).reduce((a,s)=>a+Number(s.price||0),0);
+    return `<div class="list-item"><span>${esc(p?.name||"Produs șters")}<br><span style="color:#888">${c} vânzări</span></span><b>${money(sum)}</b></div>`;
+  }).join("")||'<div class="notice">Nu există vânzări în perioada selectată.</div>';
+
+  const ld={};
+  lost.forEach(x=>ld[x.criteria]=(ld[x.criteria]||0)+1);
+  statsLostDemand.innerHTML=Object.entries(ld).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([k,v])=>
+    `<div class="list-item"><span>${esc(k)}</span><b>${v}×</b></div>`
+  ).join("")||'<div class="notice">Nu există cereri pierdute în perioada selectată.</div>';
+}
+
+function renderManager(){
+  const rec=state.interactions.filter(x=>x.type==="recommended").length,test=state.interactions.filter(x=>x.type==="tested").length,sold=state.sales.length,revenue=state.sales.reduce((a,s)=>a+s.price,0);
+  managerStats.innerHTML=`<div class="stat"><div class="n">${rec}</div><div class="l">Recomandări</div></div><div class="stat"><div class="n">${test}</div><div class="l">Testate</div></div><div class="stat"><div class="n">${sold}</div><div class="l">Vândute</div></div><div class="stat"><div class="n">${money(revenue)}</div><div class="l">Vânzări înregistrate</div></div>`;
+  const mx=Math.max(rec,test,sold,1);funnelBox.innerHTML=[["Recomandat",rec],["Testat",test],["Vândut",sold]].map(([n,v])=>`<div style="font-size:10px;margin:10px 0"><div style="display:flex;justify-content:space-between"><span>${n}</span><b>${v}</b></div><div class="bar"><span style="width:${v/mx*100}%"></span></div></div>`).join("");
+  const counts={};state.sales.forEach(s=>counts[s.productId]=(counts[s.productId]||0)+1);topProducts.innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([id,c])=>{const p=state.products.find(x=>x.id==id);return`<div class="list-item"><span>${esc(p?.name||"Produs șters")}</span><b>${c} vânzări</b></div>`}).join("")||'<div class="notice">Încă nu există vânzări.</div>';
+  const lost={};state.lostDemand.forEach(x=>lost[x.criteria]=(lost[x.criteria]||0)+1);lostDemandBox.innerHTML=Object.entries(lost).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`<div class="list-item"><span>${esc(k)}</span><b>${v}×</b></div>`).join("")||'<div class="notice">Nu există cereri pierdute.</div>';
+  locationSummary.innerHTML=state.locations.map(l=>{const units=state.products.reduce((a,p)=>a+getStock(p,l),0),val=state.products.reduce((a,p)=>a+getStock(p,l)*p.price,0);return`<div class="list-item"><span><b>${esc(l)}</b><br><span style="color:#888">${units} bucăți</span></span><b>${money(val)}</b></div>`}).join("")
+}
+function addLocation(){const n=newLocationName.value.trim();if(!n||state.locations.includes(n))return;state.locations.push(n);state.products.forEach(p=>p.stocks[n]=0);newLocationName.value="";saveState();renderAll();toast("Locație adăugată")}
+
+function renderUsers(){usersList.innerHTML=state.users.map(u=>`<div class="list-item"><span>${esc(u.name)} · ${u.role==="manager"?"Manager":"Vânzător"}</span>${state.users.length>1?`<button class="mini delete" onclick="deleteUser(${u.id})">Șterge</button>`:""}</div>`).join("");supabaseUrl.value=state.cloud.url||"";supabaseKey.value=state.cloud.key||"";updateCloudStatus()}
+window.deleteUser=id=>{if(id===state.currentUserId){toast("Nu poți șterge utilizatorul activ");return}state.users=state.users.filter(u=>u.id!==id);saveState();renderTop();renderUsers()}
+function addUser(){const n=newUserName.value.trim();if(!n)return;state.users.push({id:Date.now(),name:n,role:newUserRole.value});newUserName.value="";saveState();renderTop();renderUsers();toast("Utilizator adăugat")}
+function initCloud(){cloudClient=null;if(state.cloud.url&&state.cloud.key&&window.supabase){cloudClient=window.supabase.createClient(state.cloud.url,state.cloud.key)}updateCloudStatus()}
+function updateCloudStatus(){const on=!!cloudClient;cloudDot.classList.toggle("on",on);cloudText.textContent=on?"Conexiune configurată":"Neconfigurat"}
+function saveCloud(){state.cloud.url=supabaseUrl.value.trim();state.cloud.key=supabaseKey.value.trim();saveState();initCloud();toast("Setări cloud salvate")}
+async function pushCloud(){if(!cloudClient){toast("Configurează Supabase");return}try{const payload={...state,cloud:{url:state.cloud.url,key:""}};const {error}=await cloudClient.from("aromaiq_state").upsert({id:"main",payload,updated_at:new Date().toISOString()});if(error)throw error;toast("Date trimise în cloud")}catch(e){alert("Eroare cloud: "+e.message)}}
+async function pullCloud(){if(!cloudClient){toast("Configurează Supabase");return}try{const {data,error}=await cloudClient.from("aromaiq_state").select("payload").eq("id","main").single();if(error)throw error;const cloudCfg=state.cloud;state=migrateState(data.payload);state.cloud=cloudCfg;saveState();renderAll();toast("Date descărcate din cloud")}catch(e){alert("Eroare cloud: "+e.message)}}
+
+function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="aromaiq-backup.json";a.click();URL.revokeObjectURL(a.href)}
+function importBackup(file){const r=new FileReader();r.onload=()=>{try{state=migrateState(JSON.parse(r.result));saveState();renderAll();toast("Backup importat")}catch{alert("Backup invalid")}};r.readAsText(file)}
+
+function clearRec(){selected.clear();renderChips();budgetMax.value="";familyFilter.value="";noteFilter.value="";longevityFilter.value="";recommendations.innerHTML=""}
+function nav(view){
+  if(!isManager()&&["add","import","manager","statistics","cloud","backup"].includes(view))view="recommend";
+  document.querySelectorAll(".view").forEach(x=>x.classList.toggle("active",x.id===view));document.querySelectorAll("[data-view]").forEach(x=>x.classList.toggle("active",x.dataset.view===view));
+  const t={recommend:["Recomandă un parfum","Recomandări rapide din stocul locației."],stock:["Stoc","Inventarul locației selectate."],compare:["Compară","Ajută clientul să aleagă între două parfumuri."],scan:["Scanare","Găsește produsul după cod de bare sau SKU."],add:["Produse","Catalog și administrare produse."],import:["Import catalog","Încarcă rapid nomenclatorul magazinului."],manager:["Manager","Vânzări, funnel, cereri pierdute și stoc central."],statistics:["Statistici","Vânzări, conversii și indicatori operaționali."],cloud:["Cloud & conturi","Utilizatori și sincronizare Supabase."],backup:["Backup","Export și restaurare completă."]};pageTitle.textContent=t[view][0];pageDesc.textContent=t[view][1];
+  if(view==="stock")renderStock();if(view==="compare"){renderCompareSelectors();renderCompare()}if(view==="add")renderManage();if(view==="manager")renderManager();if(view==="statistics")renderStatistics();if(view==="cloud")renderUsers();if(view!=="scan")stopScanner()
+}
+function renderAll(){renderTop();renderChips();renderStock();renderCompareSelectors();renderManage();renderManager();renderStatistics();renderUsers();initCloud()}
+
+document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>nav(b.dataset.view));
+locationSelect.onchange=()=>{state.currentLocation=locationSelect.value;saveState();renderAll();if(document.querySelector(".view.active")?.id==="recommend")recommendations.innerHTML=""};
+userSelect.onchange=()=>{state.currentUserId=Number(userSelect.value);saveState();renderAll();nav("recommend")};
+recommendBtn.onclick=()=>renderRecommendations(true);clearBtn.onclick=clearRec;sendBtn.onclick=sendChat;chatText.addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
+document.querySelectorAll("[data-budget]").forEach(b=>b.onclick=()=>{document.querySelectorAll("[data-budget]").forEach(x=>x.classList.remove("active"));b.classList.add("active");budgetMax.value=b.dataset.budget});
+recommendSort.onchange=()=>{if(hasCriteria(currentCriteria()))renderRecommendations(false)};
+stockSearch.oninput=renderStock;stockFilter.onchange=renderStock;stockSort.onchange=renderStock;
+compareBtn.onclick=renderCompare;clearCompareBtn.onclick=()=>{compareSelection=[];renderCompareSelectors();compareResult.innerHTML=""};
+startScanBtn.onclick=startScanner;stopScanBtn.onclick=stopScanner;barcodeSearchBtn.onclick=()=>renderScanProduct(findByCode(barcodeInput.value));barcodeInput.addEventListener("keydown",e=>{if(e.key==="Enter")renderScanProduct(findByCode(barcodeInput.value))});
+addBtn.onclick=addProduct;pImageFile.onchange=async()=>{if(pImageFile.files[0])imageDataPending=await readImageFile(pImageFile.files[0])};
+cancelEdit.onclick=()=>editModal.classList.remove("open");saveEdit.onclick=saveEdit;editModal.onclick=e=>{if(e.target===editModal)editModal.classList.remove("open")};
+importCatalogBtn.onclick=importCatalog;addLocationBtn.onclick=addLocation;addUserBtn.onclick=addUser;saveCloudBtn.onclick=saveCloud;pushCloudBtn.onclick=pushCloud;pullCloudBtn.onclick=pullCloud;
+document.querySelectorAll("#statsPeriodTabs .period-btn").forEach(b=>b.onclick=()=>{statsDays=Number(b.dataset.days);renderStatistics()});
+exportBtn.onclick=exportBackup;importFile.onchange=e=>{if(e.target.files[0])importBackup(e.target.files[0])};resetBtn.onclick=()=>{if(confirm("Resetezi toate datele demo?")){state=deepClone(DEFAULT_STATE);saveState();renderAll();nav("recommend");toast("Reset efectuat")}};
+
+renderChecks();renderAll();nav("recommend");
+</script>
 </body>
 </html>
