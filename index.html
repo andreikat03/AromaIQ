@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="AromaIQ - retail perfume assistant for recommendations, inventory and sales.">
+<meta name="theme-color" content="#f4f2ef">
+<link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+<title>AromaIQ Retail</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="assets/css/styles.css">
+
+</head>
+<body class="role-seller">
+<div class="app">
+<aside>
+  <div class="brand">
+    <div class="brand-row"><div class="brand-mark">AIQ</div><div><div class="logo">AromaIQ</div><small>Retail perfume assistant</small></div></div>
+  </div>
+  <nav id="sideNav">
+    <button class="nav-btn active" data-view="recommend">Recomandă</button>
+    <button class="nav-btn" data-view="stock">Stoc</button>
+    <button class="nav-btn" data-view="compare">Compară</button>
+    <button class="nav-btn" data-view="scan">Scanare</button>
+    <div class="nav-sep manager-only"></div>
+    <button class="nav-btn manager-only" data-view="add">Produse</button>
+    <button class="nav-btn manager-only" data-view="import">Import catalog</button>
+    <button class="nav-btn manager-only" data-view="manager">Manager</button>
+    <button class="nav-btn manager-only" data-view="cloud">Cloud & conturi</button>
+    <button class="nav-btn manager-only" data-view="backup">Backup</button>
+  </nav>
+  <div class="side-info"><b>Mod simplu pentru tejghea.</b><br>Vânzătorul vede doar funcțiile folosite în conversația cu clientul. Managerul are administrarea separată.</div>
+</aside>
+
+<main>
+  <div class="topbar">
+    <div><h1 id="pageTitle">Recomandă un parfum</h1><p id="pageDesc">Recomandări rapide din stocul locației.</p></div>
+    <div class="top-actions">
+      <select class="compact" id="locationSelect"></select>
+      <select class="compact" id="userSelect"></select>
+      <div class="status"><span class="dot"></span><span id="roleLabel">Vânzător</span></div>
+    </div>
+  </div>
+
+  <div class="mobile-menu" id="mobileNav">
+    <button class="btn soft" data-view="recommend">Recomandă</button><button class="btn soft" data-view="stock">Stoc</button><button class="btn soft" data-view="compare">Compară</button><button class="btn soft" data-view="scan">Scanare</button>
+    <button class="btn soft manager-only" data-view="manager">Manager</button>
+  </div>
+
+  <section id="recommend" class="view active">
+    <div class="grid">
+      <div class="card">
+        <div class="kicker">Consultare rapidă</div><h2>Ce caută clientul?</h2>
+        <div class="sub">Alege doar criteriile relevante. Recomandările folosesc prețul și stocul real din locația selectată.</div>
+        <div class="chips" id="chips"></div>
+        <div class="consult">
+          <div class="row">
+            <div class="label"><b>Buget maxim</b><span>Opțional</span></div>
+            <div class="budget"><input id="budgetMax" type="number" min="0" placeholder="Ex: 300 lei"><button class="quick" data-budget="150">≤150</button><button class="quick" data-budget="250">≤250</button><button class="quick" data-budget="400">≤400</button><button class="quick" data-budget="">Fără limită</button></div>
+          </div>
+          <details>
+            <summary>Mai multe criterii</summary>
+            <div class="extra">
+              <select id="familyFilter"><option value="">Orice familie</option><option>Citric</option><option>Floral</option><option>Gurmand</option><option>Lemnos</option><option>Oriental</option><option>Acvatic</option><option>Aromatic</option><option>Mosc</option></select>
+              <input id="noteFilter" placeholder="Notă: vanilie, oud...">
+              <select id="longevityFilter"><option value="">Orice persistență</option><option value="6">Cel puțin medie</option><option value="8">Persistent</option><option value="9">Foarte persistent</option></select>
+            </div>
+          </details>
+          <div class="sort-row"><div class="label"><b>Ordine</b><span>Implicit după potrivire</span></div>
+            <select id="recommendSort"><option value="match">Cea mai bună potrivire</option><option value="name-asc">Alfabetic A–Z</option><option value="price-asc">Preț mic → mare</option><option value="price-desc">Preț mare → mic</option><option value="stock-desc">Stoc mare → mic</option><option value="longevity-desc">Persistență</option></select>
+          </div>
+        </div>
+        <div class="actions"><button class="btn primary" id="recommendBtn">Arată recomandările</button><button class="btn soft" id="clearBtn">Resetează</button></div>
+        <div id="recommendations" class="recommendations"></div>
+      </div>
+
+      <div class="card chat">
+        <div class="kicker">Asistent rapid</div><h2>Întreabă natural</h2>
+        <div class="sub">Ex: „dulce pentru nuntă, femei, maxim 300 lei”.</div>
+        <div class="messages" id="messages"><div class="msg bot">Spune-mi ce caută clientul. Îți recomand doar produse disponibile în locația curentă.</div></div>
+        <div class="chat-input"><input id="chatText" placeholder="Scrie cererea clientului..."><button class="btn primary" id="sendBtn">Trimite</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="stock" class="view">
+    <div class="stats" id="stats"></div>
+    <div class="card">
+      <div class="kicker">Inventar</div><h2>Stoc locație</h2><div class="sub">Căutare și sortare rapidă. Managerul poate edita și corecta produsele.</div>
+      <div class="toolbar"><input id="stockSearch" placeholder="Caută nume, brand, cod, familie sau notă..."><select id="stockFilter"><option value="all">Toate</option><option value="in">În stoc</option><option value="low">Stoc mic</option><option value="out">Stoc 0</option></select><select id="stockSort"><option value="name-asc">Alfabetic A–Z</option><option value="name-desc">Alfabetic Z–A</option><option value="stock-desc">Stoc mare → mic</option><option value="stock-asc">Stoc mic → mare</option><option value="price-asc">Preț mic → mare</option><option value="price-desc">Preț mare → mic</option><option value="brand-asc">Brand A–Z</option></select></div>
+      <div class="table-wrap"><table><thead><tr><th>Produs</th><th>Cod</th><th>Familie</th><th>Preț</th><th>Stoc</th><th>Acțiuni</th></tr></thead><tbody id="stockBody"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="compare" class="view">
+    <div class="card">
+      <div class="kicker">Comparare</div><h2>Compară două parfumuri</h2><div class="sub">Util când clientul ezită între două variante.</div>
+      <div class="toolbar"><select id="compareA"></select><select id="compareB"></select><button class="btn primary" id="compareBtn">Compară</button><button class="btn soft" id="clearCompareBtn">Golește</button></div>
+      <div id="compareResult" class="compare-grid"></div>
+    </div>
+  </section>
+
+  <section id="scan" class="view">
+    <div class="scan-wrap">
+      <div class="card">
+        <div class="kicker">Cod de bare</div><h2>Scanează produsul</h2><div class="sub">Pe telefoanele compatibile folosește camera. Pe desktop poți introduce codul manual.</div>
+        <div class="scanner" id="scannerBox"><video id="scanVideo" playsinline muted></video><div class="scan-line"></div><div id="scanPlaceholder" style="color:#aaa;font-size:11px">Camera este oprită</div></div>
+        <div class="actions"><button class="btn primary" id="startScanBtn">Pornește camera</button><button class="btn soft" id="stopScanBtn">Oprește</button></div>
+      </div>
+      <div class="card">
+        <div class="kicker">Căutare manuală</div><h2>Cod / SKU / barcode</h2><div class="sub">Poți folosi și un scanner USB care scrie codul în câmp.</div>
+        <div class="chat-input" style="border-top:0"><input id="barcodeInput" placeholder="Scanează sau scrie codul"><button class="btn primary" id="barcodeSearchBtn">Caută</button></div>
+        <div id="scanResult" class="scan-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="add" class="view">
+    <div class="card">
+      <div class="kicker">Catalog</div><h2>Adaugă / editează produs</h2><div class="sub">Imaginea poate fi un URL sau un fișier local. Stocul se adaugă în locația selectată.</div>
+      <div class="form">
+        <div class="field"><label>Nume</label><input id="pName"></div><div class="field"><label>Brand</label><input id="pBrand"></div>
+        <div class="field"><label>SKU</label><input id="pSku"></div><div class="field"><label>Cod de bare</label><input id="pBarcode"></div>
+        <div class="field"><label>Preț (lei)</label><input id="pPrice" type="number" min="0" step="0.01"></div><div class="field"><label>Stoc inițial</label><input id="pStock" type="number" min="0" value="1"></div>
+        <div class="field"><label>Gen</label><select id="pGender"><option>Unisex</option><option>Femei</option><option>Bărbați</option></select></div><div class="field"><label>Familie</label><select id="pFamily"><option value="">Nespecificată</option><option>Citric</option><option>Floral</option><option>Gurmand</option><option>Lemnos</option><option>Oriental</option><option>Acvatic</option><option>Aromatic</option><option>Mosc</option></select></div>
+        <div class="field"><label>Note</label><input id="pNotes" placeholder="Vanilie, oud, mosc"></div><div class="field"><label>Persistență 1–10</label><input id="pLongevity" type="number" min="0" max="10"></div>
+        <div class="field full"><label>Descriere</label><textarea id="pDesc" rows="2"></textarea></div>
+        <div class="field"><label>Imagine URL</label><input id="pImage" placeholder="https://..."></div><div class="field"><label>sau încarcă imagine</label><input id="pImageFile" type="file" accept="image/*"></div>
+        <div class="field full"><label>Categorii</label><div class="checks" id="tagChecks"></div></div>
+        <div class="field full"><button class="btn primary" id="addBtn">Adaugă produsul</button></div>
+      </div>
+      <div class="manage"><h2 style="font-size:15px">Produse din bază</h2><div id="manageList"></div></div>
+    </div>
+  </section>
+
+  <section id="import" class="view">
+    <div class="card">
+      <div class="kicker">Onboarding catalog</div><h2>Import Excel / CSV / JSON</h2>
+      <div class="sub">Recunoaște automat coloane precum Nume, Brand, SKU, Cod de bare, Preț, Stoc, Gen, Familie, Note, Persistență, Categorii, Imagine și Locație.</div>
+      <div class="import-zone"><input id="catalogFile" type="file" accept=".xlsx,.xls,.csv,.json"><div class="actions" style="justify-content:center"><button class="btn primary" id="importCatalogBtn">Importă catalogul</button></div></div>
+      <div id="importStatus" class="import-status"></div>
+      <div class="notice" style="margin-top:12px">Pentru CSV/Excel, dacă există coloana <b>Locație</b>, stocul intră în locația respectivă. Dacă nu, intră în locația selectată sus. Produsele cu același SKU sau cod de bare sunt actualizate, nu duplicate.</div>
+    </div>
+  </section>
+
+  <section id="manager" class="view">
+    <div class="stats" id="managerStats"></div>
+    <div class="dashboard-grid">
+      <div class="card"><div class="kicker">Funnel</div><h2>Recomandat → Testat → Vândut</h2><div id="funnelBox"></div></div>
+      <div class="card"><div class="kicker">Produse</div><h2>Cele mai vândute</h2><div id="topProducts" class="list"></div></div>
+      <div class="card"><div class="kicker">Cerere pierdută</div><h2>Ce au cerut clienții și nu aveam</h2><div id="lostDemandBox" class="list"></div></div>
+      <div class="card"><div class="kicker">Locații</div><h2>Stoc central</h2><div id="locationSummary" class="list"></div><div class="actions"><input id="newLocationName" placeholder="Nume locație"><button class="btn soft" id="addLocationBtn">Adaugă locație</button></div></div>
+    </div>
+  </section>
+
+  <section id="cloud" class="view">
+    <div class="dashboard-grid">
+      <div class="card">
+        <div class="kicker">Utilizatori</div><h2>Conturi locale</h2><div class="sub">Separă vânzătorii de manageri. Pentru pilot, conturile sunt stocate local și se includ în sincronizarea cloud.</div>
+        <div id="usersList" class="list"></div>
+        <div class="form" style="margin-top:12px"><div class="field"><label>Nume</label><input id="newUserName"></div><div class="field"><label>Rol</label><select id="newUserRole"><option value="seller">Vânzător</option><option value="manager">Manager</option></select></div></div>
+        <div class="actions"><button class="btn soft" id="addUserBtn">Adaugă utilizator</button></div>
+      </div>
+      <div class="card">
+        <div class="kicker">Supabase</div><h2>Sincronizare cloud</h2>
+        <div class="cloud-status"><span id="cloudDot" class="cloud-dot"></span><span id="cloudText">Neconfigurat</span></div>
+        <div class="form" style="margin-top:12px"><div class="field full"><label>Project URL</label><input id="supabaseUrl" placeholder="https://xxxx.supabase.co"></div><div class="field full"><label>Anon key</label><input id="supabaseKey" type="password"></div></div>
+        <div class="actions"><button class="btn soft" id="saveCloudBtn">Salvează conexiunea</button><button class="btn blue" id="pullCloudBtn">Descarcă din cloud</button><button class="btn green" id="pushCloudBtn">Trimite în cloud</button></div>
+        <div class="notice" style="margin-top:12px">În Supabase creează o tabelă <b>aromaiq_state</b> cu coloanele <b>id text primary key</b>, <b>payload jsonb</b>, <b>updated_at timestamptz</b>. Pentru pilot poți folosi un singur rând cu id <b>main</b>.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="backup" class="view">
+    <div class="card"><div class="kicker">Siguranță</div><h2>Backup complet</h2><div class="sub">Include catalog, stocuri pe locații, vânzări, feedback, cereri pierdute, utilizatori și setări.</div>
+      <div class="actions"><button class="btn primary" id="exportBtn">Exportă backup</button><label class="btn soft">Importă backup<input id="importFile" type="file" accept=".json" style="display:none"></label><button class="btn danger" id="resetBtn">Reset demo</button></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="modal" id="editModal"><div class="modal-box"><h2 style="margin-top:0">Editează produsul</h2><div class="form">
+  <div class="field"><label>Nume</label><input id="eName"></div><div class="field"><label>Brand</label><input id="eBrand"></div>
+  <div class="field"><label>SKU</label><input id="eSku"></div><div class="field"><label>Cod de bare</label><input id="eBarcode"></div>
+  <div class="field"><label>Preț</label><input id="ePrice" type="number"></div><div class="field"><label>Stoc locație curentă</label><input id="eStock" type="number"></div>
+  <div class="field"><label>Gen</label><select id="eGender"><option>Unisex</option><option>Femei</option><option>Bărbați</option></select></div><div class="field"><label>Familie</label><input id="eFamily"></div>
+  <div class="field"><label>Note</label><input id="eNotes"></div><div class="field"><label>Persistență</label><input id="eLongevity" type="number" min="0" max="10"></div>
+  <div class="field full"><label>Descriere</label><textarea id="eDesc" rows="2"></textarea></div><div class="field full"><label>Imagine URL / data</label><input id="eImage"></div>
+  <div class="field full"><label>Categorii</label><div class="checks" id="editTagChecks"></div></div>
+</div><div class="actions" style="justify-content:flex-end"><button class="btn soft" id="cancelEdit">Anulează</button><button class="btn primary" id="saveEdit">Salvează</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="assets/js/app.js"></script>
+
+</body>
+</html>
